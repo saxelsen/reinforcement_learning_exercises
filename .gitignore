@@ -1,0 +1,10 @@
+# Created by .ignore support plugin (hsz.mobi)
+### palmtree_module template
+.idea
+venv
+*.pyc
+secret_settings.py
+!secret_settings.py.template
+.gitignore
+.idea/
+venv/
