@@ -1,3 +1,5 @@
+import numpy as np
+from math import floor
 
 ROWS = 3
 COLS = 3
@@ -37,3 +39,12 @@ def generate_state_space():
     state_space = dict()
     initial_state = (EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY)
 
+
+# Use numpy array to store the board state and then use this function to convert between a range index and coordinates.
+def index_to_board_coordinates(index):
+    if index < 0 or index > 8:
+        raise IndexError("Index out of bounds. Index is bounded by 0 and 8")
+    row = floor(index / COLS)
+    col = index % 3
+
+    return row, col
