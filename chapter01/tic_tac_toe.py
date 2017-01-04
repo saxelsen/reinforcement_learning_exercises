@@ -22,11 +22,39 @@ def invert_state(state):
 
 def generate_state_space():
     state_space = dict()
-    root_state = np.ones((ROWS, COLS)).astype(int) * EMPTY
-    root_state_key = state_to_string(root_state)
+    root_state = [0] * (ROWS * COLS)
+    root_state_key = list_to_string(root_state)
     state_space[root_state_key] = 0.5
 
     return state_space
+
+
+def add_states(root_state, player, state_space):
+    """
+    Go through all the tiles on the board. If there is an empty tile, fill it with the current player's symbol,
+    change the player and do repeat with the new board state until the entire board has been filled.
+    This will recursively fill the state_space from the given root_state.
+
+    :param root_state: a list of length 9 with each element representing a tile on the TicTacToe board.
+    :param player: an int: 1 or 2 for X or O
+    :param state_space: a dict containing the current game states as keys
+    :return: Nothing. Adds new elements to the state_space dict
+    """
+
+    for i, tile in enumerate(root_state):
+        if tile == EMPTY:
+            new_state = list(root_state)
+            new_state[i] = player
+            new_state_key = ''.join(map(str, new_state))
+            state_space[new_state_key] = 0.5
+
+            next_player = player % 2 + 1
+            # Continue down the game tree
+            add_states(new_state, next_player, state_space)
+
+
+def list_to_string(a_list):
+    return ''.join(map(str, a_list))
 
 
 def state_to_string(state):
@@ -48,3 +76,5 @@ def index_to_board_coordinates(index):
     col = index % 3
 
     return row, col
+
+
