@@ -8,23 +8,32 @@ EMPTY = 0
 X = 1
 O = 2
 
+START_PROB = 0.5  #The default probability estimate of winning is 50%
+
 
 def invert_state(state):
-    result = list(state)
+    result = list(map(int, list(state)))
+
     for tile, type in enumerate(result):
         if type == EMPTY:
             pass
         else:
             result[tile] = (type % O) + 1
 
-    return result
+    return list_to_string(result)
 
 
 def generate_state_space():
     state_space = dict()
     root_state = [0] * (ROWS * COLS)
     root_state_key = list_to_string(root_state)
-    state_space[root_state_key] = 0.5
+    state_space[root_state_key] = START_PROB
+
+    add_states(root_state, X, state_space)
+
+    for state in list(state_space.keys()):
+        inverted_state = invert_state(state)
+        state_space[inverted_state] = START_PROB
 
     return state_space
 
@@ -46,9 +55,9 @@ def add_states(root_state, player, state_space):
             new_state = list(root_state)
             new_state[i] = player
             new_state_key = ''.join(map(str, new_state))
-            state_space[new_state_key] = 0.5
+            state_space[new_state_key] = START_PROB
 
-            next_player = player % 2 + 1
+            next_player = (player % O) + 1
             # Continue down the game tree
             add_states(new_state, next_player, state_space)
 
@@ -69,6 +78,7 @@ def string_to_state(state):
 
 
 # Use numpy array to store the board state and then use this function to convert between a range index and coordinates.
+# Only use it for active games.
 def index_to_board_coordinates(index):
     if index < 0 or index > 8:
         raise IndexError('Index out of bounds. Index is bounded by 0 and 8')
