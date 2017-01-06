@@ -6,7 +6,7 @@ COLS = 3
 
 EMPTY = 0
 X = 1
-O = 2
+O = 5
 
 START_PROB = 0.5  #The default probability estimate of winning is 50%
 
@@ -14,11 +14,11 @@ START_PROB = 0.5  #The default probability estimate of winning is 50%
 def invert_state(state):
     result = list(map(int, list(state)))
 
-    for tile, type in enumerate(result):
-        if type == EMPTY:
+    for tile, player in enumerate(result):
+        if player == EMPTY:
             pass
         else:
-            result[tile] = (type % O) + 1
+            result[tile] = O if player == X else X
 
     return list_to_string(result)
 
@@ -57,7 +57,7 @@ def add_states(root_state, player, state_space):
             new_state_key = ''.join(map(str, new_state))
             state_space[new_state_key] = START_PROB
 
-            next_player = (player % O) + 1
+            next_player = O if player == X else X
             # Continue down the game tree
             add_states(new_state, next_player, state_space)
 
