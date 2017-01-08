@@ -37,6 +37,51 @@ class TestingTicTacToe(unittest.TestCase):
         string = 'WONT WORK'
         self.assertRaises(ValueError, ttt.string_to_state, string)
 
+    def test_is_winning_state_for_player(self):
+        X = ttt.X
+        EMPTY = ttt.EMPTY
+
+        state = [X, X, X, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY]
+        self.assertTrue(ttt.is_winning_state_for_player(state, X))
+
+        state = [EMPTY, EMPTY, EMPTY, X, X, X, EMPTY, EMPTY, EMPTY]
+        self.assertTrue(ttt.is_winning_state_for_player(state, X))
+
+        state = [EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, X, X, X]
+        self.assertTrue(ttt.is_winning_state_for_player(state, X))
+
+        state = [X, EMPTY, EMPTY, X, EMPTY, EMPTY, X, EMPTY, EMPTY]
+        self.assertTrue(ttt.is_winning_state_for_player(state, X))
+
+        state = [EMPTY, X, EMPTY, EMPTY, X, EMPTY, EMPTY, X, EMPTY]
+        self.assertTrue(ttt.is_winning_state_for_player(state, X))
+
+        state = [EMPTY, EMPTY, X, EMPTY, EMPTY, X, EMPTY, EMPTY, X]
+        self.assertTrue(ttt.is_winning_state_for_player(state, X))
+
+        state = [X, EMPTY, EMPTY, EMPTY, X, EMPTY, EMPTY, EMPTY, X]
+        self.assertTrue(ttt.is_winning_state_for_player(state, X))
+
+        state = [EMPTY, EMPTY, X, EMPTY, X, EMPTY, X, EMPTY, EMPTY]
+        self.assertTrue(ttt.is_winning_state_for_player(state, X))
+
+    def test_is_winning_state_for_player_false(self):
+        X = ttt.X
+        EMPTY = ttt.EMPTY
+        O = ttt.O
+
+        state = [X, X, O, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY]
+        self.assertFalse(ttt.is_winning_state_for_player(state, X))
+
+        state = [EMPTY, EMPTY, EMPTY, EMPTY, X, X, EMPTY, EMPTY, EMPTY]
+        self.assertFalse(ttt.is_winning_state_for_player(state, X))
+
+        state = [EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY]
+        self.assertFalse(ttt.is_winning_state_for_player(state, X))
+
+
+
+
 
 
 

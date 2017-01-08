@@ -27,13 +27,13 @@ def generate_state_space():
     state_space = dict()
     root_state = [0] * (ROWS * COLS)
     root_state_key = list_to_string(root_state)
-    state_space[root_state_key] = START_PROB
+    state_space[root_state_key] = default_probability(root_state_key)
 
     add_states(root_state, X, state_space)
 
-    for state in list(state_space.keys()):
-        inverted_state = invert_state(state)
-        state_space[inverted_state] = START_PROB
+    for state_key in list(state_space.keys()):
+        inverted_state_key = invert_state(state_key)
+        state_space[inverted_state_key] = default_probability(inverted_state_key)
 
     return state_space
 
@@ -55,11 +55,46 @@ def add_states(root_state, player, state_space):
             new_state = list(root_state)
             new_state[i] = player
             new_state_key = ''.join(map(str, new_state))
-            state_space[new_state_key] = START_PROB
+            default_prob = default_probability(new_state_key)
+            state_space[new_state_key] = default_prob
 
-            next_player = O if player == X else X
-            # Continue down the game tree
-            add_states(new_state, next_player, state_space)
+            if 0 < default_prob < 1:
+                next_player = O if player == X else X
+                # Continue down the game tree if this game was not ended
+                add_states(new_state, next_player, state_space)
+
+
+def default_probability(state_string):
+    default_prob = 0.5
+    state = list(map(int, list(state_string)))
+
+    x_wins = is_winning_state_for_player(state, X)
+
+    if x_wins:
+        default_prob = 1
+    else:
+        o_wins = is_winning_state_for_player(state, O)
+        if o_wins:
+            default_prob = 0
+
+    return default_prob
+
+
+def is_winning_state_for_player(state, player):
+    winner = False
+    goal_sum = 3*player
+
+    if sum(state[:3]) == goal_sum or \
+       sum(state[3:6]) == goal_sum or \
+       sum(state[6:]) == goal_sum or \
+       sum([state[i] for i in [0, 3, 6]]) == goal_sum or \
+       sum([state[i] for i in [1, 4, 7]]) == goal_sum or \
+       sum([state[i] for i in [2, 5, 8]]) == goal_sum or \
+       sum([state[i] for i in [0, 4, 8]]) == goal_sum or \
+       sum([state[i] for i in [2, 4, 6]]) == goal_sum:
+        winner = True
+
+    return winner
 
 
 def list_to_string(a_list):
