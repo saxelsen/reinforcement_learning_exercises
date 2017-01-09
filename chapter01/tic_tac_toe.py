@@ -1,8 +1,11 @@
 import numpy as np
 from math import floor
-import numpy.random as random
+import numpy.random as nprandom
+import random
 
-random.seed(100)
+seed = 100
+nprandom.seed(seed)
+random.seed(seed)
 
 ROWS = 3
 COLS = 3
@@ -135,9 +138,10 @@ def print_board(board):
         for col in row:
             row_string += player_to_string[col] + '|'
         print(row_string)
+    print('')
 
 
-def play_game(ai_player, ai_model_one, ai_model_two=None):
+def play_game(ai_player, ai_model_one, ai_model_two=None, training=False):
     """
     Play through a game. X always starts the game.
     :param ai_player: An int equivalent to X or O. If ai_player is O, the user plays X and vice-versa.
@@ -156,18 +160,29 @@ def play_game(ai_player, ai_model_one, ai_model_two=None):
 
         if current_player == ai_player:
             move = ai_model_one.move(board)
+            print('AI played move {}'.format(move))
         else:
             if ai_model_two is None:
                 move = get_user_input(board)
             else:
                 move = ai_model_two.move(board)
 
+        board_before = board.copy()
         board[move] = current_player
-        print_board(board)
 
+        if training:
+            # Update the AIs if in training mode
+            ai_model_one.update(board_before, board)
+            if ai_model_two is not None:
+                ai_model_two.update(board_before, board)
+
+        print_board(board)
         board_state = board.flatten().tolist()
         is_game_won = is_winning_state_for_player(board_state, current_player)
         is_game_finished = is_game_won or (EMPTY not in board_state)
+
+        if not is_game_finished:
+            current_player = O if current_player == X else X
 
     if is_game_won:
         player_string = 'X' if current_player == X else 'O'
@@ -196,12 +211,18 @@ def get_user_input(board):
 
     return x, y
 
+
 class RLTicTacToe:
 
-    def __init__(self, model, symbol, greedy_factor=0.9):
-        self.model = model
+    def __init__(self, symbol, model=None, greedy_factor=0.9, learning_rate=0.5):
+        if model is None:
+            self.model = generate_state_space()
+        else:
+            self.model = model
+
         self.symbol = symbol
         self.greedy_factor = greedy_factor
+        self.learning_rate = learning_rate
 
     def move(self, board):
         current_state = board.flatten().tolist()
@@ -222,7 +243,7 @@ class RLTicTacToe:
 
         greedy_move, exploratory_moves = sorted_possible_plays[0], sorted_possible_plays[1:]
 
-        is_greedy = random.rand() < self.greedy_factor
+        is_greedy = nprandom.rand() < self.greedy_factor
 
         if is_greedy:
             result_move = index_to_board_coordinates(greedy_move[0])
@@ -232,7 +253,16 @@ class RLTicTacToe:
 
         return result_move
 
+    def update(self, old_board, new_board):
+        old_board_key = state_to_string(old_board)
+        new_board_key = state_to_string(new_board)
+
+        new_board_value = self.model[new_board_key]
+        old_board_value = self.model[old_board_key]
+
+        self.model[old_board_key] = old_board_value + self.learning_rate * (new_board_value - old_board_value)
 
 
-
-
+my_ai = RLTicTacToe(X)
+play_game(X, my_ai, training=True)
+print(my_ai.model['115050001'])

@@ -82,8 +82,33 @@ class TestTicTacToe(unittest.TestCase):
 
 class TestRLTicTacToe(unittest.TestCase):
 
-    def test_move(self):
-        pass
+    def setUp(self):
+        self.ai = ttt.RLTicTacToe(ttt.X)
+
+    def test_move_exception(self):
+        X = ttt.X
+        O = ttt.O
+        full_board = np.array([[X, O, X], [O, X, O], [X, O, X]])
+        self.assertRaises(EnvironmentError, self.ai.move, full_board)
+
+    def test_move_greedy(self):
+        greedy_ai = ttt.RLTicTacToe(ttt.X, greedy_factor=1)
+        X = ttt.X
+        O = ttt.O
+        EMPTY = ttt.EMPTY
+
+        board = np.array([[X, EMPTY, X], [O, X, O], [O, EMPTY, EMPTY]])
+        x, y = greedy_ai.move(board)
+        self.assertTrue(0 <= x <= 2)
+        self.assertTrue(0 <= y <= 2)
+
+    def test_move_exploratory(self):
+        exploratory_ai = ttt.RLTicTacToe(ttt.X, greedy_factor=0)
+
+        empty_board = ttt.EMPTY_BOARD
+        x, y = exploratory_ai.move(empty_board)
+        self.assertTrue(0 <= x <= 2)
+        self.assertTrue(0 <= y <= 2)
 
 
 
