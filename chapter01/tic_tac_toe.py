@@ -160,12 +160,13 @@ def play_game(ai_player, ai_model_one, ai_model_two=None, training=False):
 
         if current_player == ai_player:
             move = ai_model_one.move(board)
-            print('AI played move {}'.format(move))
+            print('AI 1 played move {}'.format(move))
         else:
             if ai_model_two is None:
                 move = get_user_input(board)
             else:
                 move = ai_model_two.move(board)
+                print('AI 2 played move {}'.format(move))
 
         board_before = board.copy()
         board[move] = current_player
@@ -262,7 +263,11 @@ class RLTicTacToe:
 
         self.model[old_board_key] = old_board_value + self.learning_rate * (new_board_value - old_board_value)
 
+    def save(self, path):
+        pass
 
-my_ai = RLTicTacToe(X)
-play_game(X, my_ai, training=True)
-print(my_ai.model['115050001'])
+
+#TODO: Currently both models have state_spaces where X-winner boards are the best. The generator should be put in the class and be specific for the model.
+ai_one = RLTicTacToe(X)
+ai_two = RLTicTacToe(O)
+play_game(X, ai_model_one=ai_one, ai_model_two=ai_two, training=True)
