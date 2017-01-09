@@ -4,7 +4,7 @@ import numpy.testing as nptest
 from chapter01 import tic_tac_toe as ttt
 
 
-class TestingTicTacToe(unittest.TestCase):
+class TestTicTacToe(unittest.TestCase):
 
     def assert_coordinate_bounds(self, coordinates):
         x, y = coordinates
@@ -78,6 +78,13 @@ class TestingTicTacToe(unittest.TestCase):
 
         state = [EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY]
         self.assertFalse(ttt.is_winning_state_for_player(state, X))
+
+
+class TestRLTicTacToe(unittest.TestCase):
+
+    def test_move(self):
+        pass
+
 
 
 

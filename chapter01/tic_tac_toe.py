@@ -1,5 +1,8 @@
 import numpy as np
 from math import floor
+import numpy.random as random
+
+random.seed(100)
 
 ROWS = 3
 COLS = 3
@@ -192,6 +195,44 @@ def get_user_input(board):
         x, y = get_user_input(board)
 
     return x, y
+
+class RLTicTacToe:
+
+    def __init__(self, model, symbol, greedy_factor=0.9):
+        self.model = model
+        self.symbol = symbol
+        self.greedy_factor = greedy_factor
+
+    def move(self, board):
+        current_state = board.flatten().tolist()
+
+        if EMPTY not in current_state:
+            raise EnvironmentError('Cannot make a move. There are no empty tiles on the board.')
+
+        possible_plays = dict()
+
+        for i, tile in enumerate(current_state):
+            if tile == EMPTY:
+                new_state = list(current_state)
+                new_state[i] = self.symbol
+                new_state_key = list_to_string(new_state)
+                possible_plays[i] = self.model[new_state_key]
+
+        sorted_possible_plays = sorted(possible_plays.items(), key=lambda x: x[1], reverse=True)
+
+        greedy_move, exploratory_moves = sorted_possible_plays[0], sorted_possible_plays[1:]
+
+        is_greedy = random.rand() < self.greedy_factor
+
+        if is_greedy:
+            result_move = index_to_board_coordinates(greedy_move[0])
+        else:
+            exploratory_move = random.choice(exploratory_moves)
+            result_move = index_to_board_coordinates(exploratory_move[0])
+
+        return result_move
+
+
 
 
 
