@@ -180,7 +180,7 @@ class RLTicTacToe:
 
         greedy_move, exploratory_moves = sorted_possible_plays[0], sorted_possible_plays[1:]
 
-        is_greedy = nprandom.rand() < self.greedy_factor
+        is_greedy = nprandom.rand() < self.greedy_factor or len(exploratory_moves) == 0
 
         if is_greedy:
             result_move = TicTacToeUtils.index_to_board_coordinates(greedy_move[0])
@@ -229,7 +229,9 @@ def play_game(ai_player, ai_model_one, ai_model_two=None, training=False, delay=
     board = EMPTY_BOARD.copy()
     is_game_won = is_game_finished = False
     current_player = X
-    TicTacToeUtils.print_board(board)
+
+    if not training:
+        TicTacToeUtils.print_board(board)
 
     while is_game_finished is not True:
 
@@ -251,8 +253,9 @@ def play_game(ai_player, ai_model_one, ai_model_two=None, training=False, delay=
             ai_model_one.update(board_before, board)
             if ai_model_two is not None:
                 ai_model_two.update(board_before, board)
+        else:
+            TicTacToeUtils.print_board(board)
 
-        TicTacToeUtils.print_board(board)
         board_state = board.flatten().tolist()
         is_game_won = TicTacToeUtils.is_winning_state_for_player(board_state, current_player)
         is_game_finished = is_game_won or (EMPTY not in board_state)
