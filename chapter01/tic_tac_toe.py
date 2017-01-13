@@ -147,7 +147,8 @@ class TicTacToeGenerator:
 
         return default_prob
 
-
+#TODO: Make a swapping method that swaps the dictionary to reflect X or O player. States should be swapped, but probabilities the same.
+#TODO: Load tie games with probability 0.5 to distinguish between playing a losing move and a tie move.
 class RLTicTacToe:
 
     def __init__(self, symbol, model=None, greedy_factor=0.9, learning_rate=0.5):
@@ -177,6 +178,7 @@ class RLTicTacToe:
                 possible_plays[i] = self.model[new_state_key]
 
         sorted_possible_plays = sorted(possible_plays.items(), key=lambda x: x[1], reverse=True)
+        print(sorted_possible_plays)
 
         greedy_move, exploratory_moves = sorted_possible_plays[0], sorted_possible_plays[1:]
 
