@@ -93,6 +93,16 @@ class TicTacToeGenerator:
 
         return TicTacToeUtils.list_to_string(result)
 
+    def revert_state_space(self, space):
+        #TODO: Should revert_state_space invert the keys or invert the probabilities???
+        result = dict()
+
+        for state_key, probability in space.items():
+            inverse_state_key = self.invert_state(state_key)
+            result[inverse_state_key] = probability
+
+        return result
+
     def generate_state_space(self):
         state_space = dict()
         root_state = EMPTY_BOARD.flatten().tolist()
@@ -137,18 +147,16 @@ class TicTacToeGenerator:
         state = list(map(int, list(state_string)))
 
         player_wins = TicTacToeUtils.is_winning_state_for_player(state, self.origin_player)
+        opponent_wins = TicTacToeUtils.is_winning_state_for_player(state, self.opponent)
 
         if player_wins:
             default_prob = 1
-        else:
-            opponent_wins = TicTacToeUtils.is_winning_state_for_player(state, self.opponent)
-            if opponent_wins or (EMPTY not in state):
-                default_prob = 0
+        elif opponent_wins:
+            default_prob = 0
 
         return default_prob
 
-#TODO: Make a swapping method that swaps the dictionary to reflect X or O player. States should be swapped, but probabilities the same.
-#TODO: Load tie games with probability 0.5 to distinguish between playing a losing move and a tie move.
+
 class RLTicTacToe:
 
     def __init__(self, symbol, model=None, greedy_factor=0.9, learning_rate=0.5):
@@ -161,6 +169,16 @@ class RLTicTacToe:
             self.model = self.generator.generate_state_space()
         else:
             self.model = model
+
+    def set_symbol(self, symbol):
+
+        # The state space should be flipped to represent inverse probabilities.
+        if symbol == self.symbol:
+            self.model = self.generator.revert_state_space(self.model)
+        else:
+            pass
+
+        self.symbol = symbol
 
     def move(self, board):
         current_state = board.flatten().tolist()

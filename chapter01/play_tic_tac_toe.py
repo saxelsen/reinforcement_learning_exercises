@@ -7,6 +7,12 @@ ai_two = RLTicTacToe.load('data/model_O.pickle')
 for i in range(0, 10000):
     play_game(X, ai_model_one=ai_one, ai_model_two=ai_two, training=True, delay=0)
 
-ai_one.save('data/model_X_10k.pickle')
+ai_one.set_symbol(O)
+ai_two.set_symbol(X)
 
-play_game(X, ai_model_one=ai_one, training=False, delay=0.5)
+for i in range(0, 10000):
+    play_game(O, ai_model_one=ai_one, ai_model_two=ai_two, training=True, delay=0)
+
+ai_one.save('data/model_X_20k.pickle')
+
+#play_game(X, ai_model_one=ai_one, training=False, delay=0.5)
