@@ -83,19 +83,18 @@ class TicTacToeUtils:
 
 class TicTacToeGenerator:
 
-    def __init__(self, origin_player_symbol):
+    def __init__(self, origin_player_symbol, opponent_symbol):
         self.origin_player = origin_player_symbol
-        self.opponent = O if origin_player_symbol == X else X
+        self.opponent = opponent_symbol
 
-    @staticmethod
-    def invert_state(state):
+    def invert_state(self, state):
         result = list(state)
 
         for tile, player in enumerate(result):
             if player == EMPTY:
                 pass
             else:
-                result[tile] = O if player == X else X
+                result[tile] = self.opponent if player == self.origin_player else self.origin_player
 
         return TicTacToeUtils.list_to_string(result)
 
@@ -118,7 +117,7 @@ class TicTacToeGenerator:
         self.add_states(root_state, self.origin_player, state_space)
 
         for state_key in list(state_space.keys()):
-            inverted_state_key = TicTacToeGenerator.invert_state(state_key)
+            inverted_state_key = self.invert_state(state_key)
             state_space[inverted_state_key] = self.default_probability(inverted_state_key)
 
         return state_space
@@ -144,7 +143,7 @@ class TicTacToeGenerator:
                 state_space[new_state_key] = default_prob
 
                 if 0 < default_prob < 1:
-                    next_player = O if player == X else X
+                    next_player = self.opponent if player == self.origin_player else self.origin_player
                     # Continue down the game tree if this game was not ended
                     self.add_states(new_state, next_player, state_space)
 
@@ -165,11 +164,14 @@ class TicTacToeGenerator:
 
 class RLTicTacToe:
 
+    model_symbol = 'M'
+    enemy_symbol = 'E'
+
     def __init__(self, symbol, model=None, greedy_factor=0.9, learning_rate=0.5, training=False):
-        self.symbol = symbol
+        self.set_symbol(symbol)
         self.greedy_factor = greedy_factor
         self.learning_rate = learning_rate
-        self.generator = TicTacToeGenerator(symbol)
+        self.generator = TicTacToeGenerator(self.model_symbol, self.enemy_symbol)
         self.training = training
 
         if model is None:
@@ -178,27 +180,22 @@ class RLTicTacToe:
             self.model = model
 
     def set_symbol(self, symbol):
-
-        # The state space should be flipped to represent inverse probabilities.
-        if symbol == self.symbol:
-            self.model = self.generator.revert_state_space(self.model)
-        else:
-            pass
-
         self.symbol = symbol
+        self.opponent = X if symbol == O else O
 
     def move(self, board):
-        current_state = board.flatten().tolist()
 
-        if EMPTY not in current_state:
+        internal_board_state_list = self._convert_state_to_internal_state_list(board)
+
+        if EMPTY not in internal_board_state_list:
             raise EnvironmentError('Cannot make a move. There are no empty tiles on the board.')
 
         possible_plays = dict()
 
-        for i, tile in enumerate(current_state):
+        for i, tile in enumerate(internal_board_state_list):
             if tile == EMPTY:
-                new_state = list(current_state)
-                new_state[i] = self.symbol
+                new_state = list(internal_board_state_list)
+                new_state[i] = 'M'
                 new_state_key = TicTacToeUtils.list_to_string(new_state)
                 possible_plays[i] = self.model[new_state_key]
 
@@ -219,9 +216,16 @@ class RLTicTacToe:
 
         return result_move
 
+    def _convert_state_to_internal_state_list(self, state):
+        state_list = state.flatten().tolist()
+        return [var.replace(self.symbol, self.model_symbol).replace(self.opponent, self.enemy_symbol) for var in state_list]
+
     def update(self, old_board, new_board):
-        old_board_key = TicTacToeUtils.state_to_string(old_board)
-        new_board_key = TicTacToeUtils.state_to_string(new_board)
+        old_internal_board_list = self._convert_state_to_internal_state_list(old_board)
+        old_board_key = ''.join(old_internal_board_list)
+
+        new_internal_board_list = self._convert_state_to_internal_state_list(new_board)
+        new_board_key = ''.join(new_internal_board_list)
 
         new_board_value = self.model[new_board_key]
         old_board_value = self.model[old_board_key]
