@@ -1,18 +1,13 @@
 from chapter01.tic_tac_toe import *
 
-#TODO: Currently both models have state_spaces where X-winner boards are the best. The generator should be put in the class and be specific for the model.
-ai_one = RLTicTacToe.load('data/model_X.pickle')
-ai_two = RLTicTacToe.load('data/model_O.pickle')
+ai_one = RLTicTacToe(X)
+ai_two = RLTicTacToe(O)
 
-for i in range(0, 10000):
-    play_game(X, ai_model_one=ai_one, ai_model_two=ai_two, training=True, delay=0)
+starting_player = X
+N = 50000
 
-ai_one.set_symbol(O)
-ai_two.set_symbol(X)
+for i in range(0, N):
+    play_game(starting_player, ai_model_one=ai_one, ai_model_two=ai_two, training=True, delay=0)
+    starting_player = X if starting_player == O else O
 
-for i in range(0, 10000):
-    play_game(O, ai_model_one=ai_one, ai_model_two=ai_two, training=True, delay=0)
-
-ai_one.save('data/model_X_20k.pickle')
-
-#play_game(X, ai_model_one=ai_one, training=False, delay=0.5)
+ai_one.save('data/model_X_{}k.pickle'.format(int(N/1000)))

@@ -159,11 +159,12 @@ class TicTacToeGenerator:
 
 class RLTicTacToe:
 
-    def __init__(self, symbol, model=None, greedy_factor=0.9, learning_rate=0.5):
+    def __init__(self, symbol, model=None, greedy_factor=0.9, learning_rate=0.5, training=False):
         self.symbol = symbol
         self.greedy_factor = greedy_factor
         self.learning_rate = learning_rate
         self.generator = TicTacToeGenerator(symbol)
+        self.training = training
 
         if model is None:
             self.model = self.generator.generate_state_space()
@@ -196,11 +197,13 @@ class RLTicTacToe:
                 possible_plays[i] = self.model[new_state_key]
 
         sorted_possible_plays = sorted(possible_plays.items(), key=lambda x: x[1], reverse=True)
-        print(sorted_possible_plays)
 
         greedy_move, exploratory_moves = sorted_possible_plays[0], sorted_possible_plays[1:]
 
-        is_greedy = nprandom.rand() < self.greedy_factor or len(exploratory_moves) == 0
+        if self.training:
+            is_greedy = nprandom.rand() < self.greedy_factor or len(exploratory_moves) == 0
+        else:
+            is_greedy = True
 
         if is_greedy:
             result_move = TicTacToeUtils.index_to_board_coordinates(greedy_move[0])
@@ -236,10 +239,10 @@ class RLTicTacToe:
         return ai
 
 
-def play_game(ai_player, ai_model_one, ai_model_two=None, training=False, delay=0.5):
+def play_game(starting_player, ai_model_one, ai_model_two=None, training=False, delay=0.5):
     """
     Play through a game. X always starts the game.
-    :param ai_player: An int equivalent to X or O. If ai_player is O, the user plays X and vice-versa.
+    :param starting_player: An int equivalent to X or O. If ai_player is O, the user plays X and vice-versa.
     :param ai_model_one: The AI model to play against.
     :param ai_model_two: A secondary AI model that can play the game. If this is not None, the two AIs will play each
     other. Should be used for training models.
@@ -248,22 +251,29 @@ def play_game(ai_player, ai_model_one, ai_model_two=None, training=False, delay=
 
     board = EMPTY_BOARD.copy()
     is_game_won = is_game_finished = False
-    current_player = X
+    current_player = starting_player
+
+    ai_model_one.training = training
+
+    if ai_model_two:
+        ai_model_two.training = training
 
     if not training:
         TicTacToeUtils.print_board(board)
 
     while is_game_finished is not True:
 
-        if current_player == ai_player:
+        if current_player == ai_model_one.symbol:
             move = ai_model_one.move(board)
-            print('AI 1 played move {}'.format(move))
+            if not training:
+                print('AI 1 played move {}'.format(move))
         else:
             if ai_model_two is None:
                 move = get_user_input(board)
             else:
                 move = ai_model_two.move(board)
-                print('AI 2 played move {}'.format(move))
+                if not training:
+                    print('AI 2 played move {}'.format(move))
 
         board_before = board.copy()
         board[move] = current_player
