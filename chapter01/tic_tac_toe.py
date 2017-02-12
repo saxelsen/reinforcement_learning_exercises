@@ -4,6 +4,7 @@ import numpy.random as nprandom
 import random
 import time
 import pickle
+import json
 
 seed = 100
 nprandom.seed(seed)
@@ -179,6 +180,7 @@ class HumanTicTacToe:
 
         return x, y
 
+
 class RLTicTacToe:
 
     model_symbol = 'M'
@@ -262,7 +264,12 @@ class RLTicTacToe:
                         'learning_rate': self.learning_rate}
         with open(path, 'wb') as file:
             pickle.dump(info_to_save, file)
-        print('Model saved.')
+        print('AI saved to {}.'.format(path))
+
+    def dump_json_model(self, path):
+        with open(path, 'w') as file:
+            json.dump(self.model, file)
+        print('Model saved to {}'.format(path))
 
     @staticmethod
     def load(path):

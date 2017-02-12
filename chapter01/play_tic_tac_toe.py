@@ -11,4 +11,4 @@ for i in range(0, N):
     game.play(starting_player, training=True)
     starting_player = X if starting_player == O else O
 
-ai_one.save('data/model_X_{}k_3.pickle'.format(int(N/1000)))
+ai_one.dump_json_model('data/medium_model.json')
