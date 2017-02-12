@@ -12,7 +12,7 @@ random.seed(seed)
 ROWS = 3
 COLS = 3
 
-#TODO: Wrap these in an Enum class
+HUMAN = 'HUMAN'
 EMPTY = '-'
 X = 'X'
 O = 'O'
@@ -98,16 +98,6 @@ class TicTacToeGenerator:
 
         return TicTacToeUtils.list_to_string(result)
 
-    def revert_state_space(self, space):
-        #TODO: Should revert_state_space invert the keys or invert the probabilities???
-        result = dict()
-
-        for state_key, probability in space.items():
-            inverse_state_key = self.invert_state(state_key)
-            result[inverse_state_key] = probability
-
-        return result
-
     def generate_state_space(self):
         state_space = dict()
         root_state = EMPTY_BOARD.flatten().tolist()
@@ -162,6 +152,33 @@ class TicTacToeGenerator:
         return default_prob
 
 
+class HumanTicTacToe:
+
+    def __init__(self, symbol):
+        self.symbol = symbol
+
+    def set_symbol(self, symbol):
+        self.symbol = symbol
+
+    def _convert_input_to_move(self, user_input):
+        x, y = user_input.split(',')
+        return int(x), int(y)
+
+    def move(self, board):
+        print('Please enter a move:')
+        user_in = input()
+        try:
+            x, y = self._convert_input_to_move(user_in)
+        except Exception as e:
+            print('Move is invalid.')
+            x, y = self.move(board)
+
+        if not (0 <= x <= 2) or not (0 <= y <= 2) or (board[x, y] != EMPTY):
+            print('Move is invalid.')
+            x, y = self.move(board)
+
+        return x, y
+
 class RLTicTacToe:
 
     model_symbol = 'M'
@@ -184,8 +201,13 @@ class RLTicTacToe:
         self.opponent = X if symbol == O else O
 
     def move(self, board):
+        # Take the current board and convert it into an internal representation that aligns with the
+        # models state_space dictionary. Run through the possible moves and order them by probability of winning.
+        # If in training mode, roll to determine whether the model makes an explorative or greedy move, else
+        # just play greedy.
+        # Return the resulting move as a set of (x,y) coordinates.
 
-        internal_board_state_list = self._convert_state_to_internal_state_list(board)
+        internal_board_state_list = self._convert_board_to_internal_state_list(board)
 
         if EMPTY not in internal_board_state_list:
             raise EnvironmentError('Cannot make a move. There are no empty tiles on the board.')
@@ -195,7 +217,7 @@ class RLTicTacToe:
         for i, tile in enumerate(internal_board_state_list):
             if tile == EMPTY:
                 new_state = list(internal_board_state_list)
-                new_state[i] = 'M'
+                new_state[i] = self.model_symbol
                 new_state_key = TicTacToeUtils.list_to_string(new_state)
                 possible_plays[i] = self.model[new_state_key]
 
@@ -216,15 +238,16 @@ class RLTicTacToe:
 
         return result_move
 
-    def _convert_state_to_internal_state_list(self, state):
+    def _convert_board_to_internal_state_list(self, state):
+        # Convert a board state into an internal model state
         state_list = state.flatten().tolist()
         return [var.replace(self.symbol, self.model_symbol).replace(self.opponent, self.enemy_symbol) for var in state_list]
 
     def update(self, old_board, new_board):
-        old_internal_board_list = self._convert_state_to_internal_state_list(old_board)
+        old_internal_board_list = self._convert_board_to_internal_state_list(old_board)
         old_board_key = ''.join(old_internal_board_list)
 
-        new_internal_board_list = self._convert_state_to_internal_state_list(new_board)
+        new_internal_board_list = self._convert_board_to_internal_state_list(new_board)
         new_board_key = ''.join(new_internal_board_list)
 
         new_board_value = self.model[new_board_key]
@@ -249,85 +272,79 @@ class RLTicTacToe:
         return ai
 
 
-def play_game(starting_player, ai_model_one, ai_model_two=None, training=False, delay=0.5):
-    """
-    Play through a game. X always starts the game.
-    :param starting_player: An int equivalent to X or O. If ai_player is O, the user plays X and vice-versa.
-    :param ai_model_one: The AI model to play against.
-    :param ai_model_two: A secondary AI model that can play the game. If this is not None, the two AIs will play each
-    other. Should be used for training models.
-    :return:
-    """
+class TicTacToeGame:
 
-    board = EMPTY_BOARD.copy()
-    is_game_won = is_game_finished = False
-    current_player = starting_player
+    time_delay = 0.5
 
-    ai_model_one.training = training
+    def __init__(self, player_one, player_two):
+        self.player_one = player_one
+        self.player_two = player_two
 
-    if ai_model_two:
-        ai_model_two.training = training
+    def _set_training_mode(self, training):
+        if isinstance(self.player_one, RLTicTacToe):
+            self.player_one.training = training
 
-    if not training:
-        TicTacToeUtils.print_board(board)
+        if isinstance(self.player_two, RLTicTacToe):
+            self.player_two.training = training
 
-    while is_game_finished is not True:
+    def _update_players(self, old_board, new_board):
 
-        if current_player == ai_model_one.symbol:
-            move = ai_model_one.move(board)
-            if not training:
-                print('AI 1 played move {}'.format(move))
-        else:
-            if ai_model_two is None:
-                move = get_user_input(board)
-            else:
-                move = ai_model_two.move(board)
-                if not training:
-                    print('AI 2 played move {}'.format(move))
+        if isinstance(self.player_one, RLTicTacToe):
+            self.player_one.update(old_board, new_board)
 
-        board_before = board.copy()
-        board[move] = current_player
+        if isinstance(self.player_two, RLTicTacToe):
+            self.player_two.update(old_board, new_board)
 
-        if training:
-            # Update the AIs if in training mode
-            ai_model_one.update(board_before, board)
-            if ai_model_two is not None:
-                ai_model_two.update(board_before, board)
-        else:
+    def play(self, starting_player_symbol, training=False):
+        """
+        Play through a game. X always starts the game.
+        :param starting_player_symbol: An int equivalent to X or O. If ai_player is O, the user plays X and vice-versa.
+        :param ai_model_one: The AI model to play against.
+        :param ai_model_two: A secondary AI model that can play the game. If this is not None, the two AIs will play each
+        other. Should be used for training models.
+        :return:
+        """
+
+        board = EMPTY_BOARD.copy()
+        is_game_won = is_game_finished = False
+        current_player = starting_player_symbol
+
+        self._set_training_mode(training)
+
+        if not training:
             TicTacToeUtils.print_board(board)
 
-        board_state = board.flatten().tolist()
-        is_game_won = TicTacToeUtils.is_winning_state_for_player(board_state, current_player)
-        is_game_finished = is_game_won or (EMPTY not in board_state)
+        while is_game_finished is not True:
 
-        if not is_game_finished:
-            current_player = O if current_player == X else X
-        time.sleep(delay)
+            if current_player == self.player_one.symbol:
+                move = self.player_one.move(board)
+                if not training:
+                    print('Player 1 played move {}'.format(move))
+            else:
+                move = self.player_two.move(board)
+                if not training:
+                    print('Player 2 played move {}'.format(move))
 
-    if is_game_won:
-        player_string = current_player
-        print('Player {} won the game'.format(player_string))
-    else:
-        print('The game was a tie.')
+            board_before = board.copy()
+            board[move] = current_player
 
+            if training:
+                self._update_players(board_before, board)
+            else:
+                time.sleep(self.time_delay)
+                TicTacToeUtils.print_board(board)
 
-def input_to_move(user_input):
-    x, y = user_input.split(',')
-    return int(x), int(y)
+            board_state = board.flatten().tolist()
+            is_game_won = TicTacToeUtils.is_winning_state_for_player(board_state, current_player)
+            is_game_finished = is_game_won or (EMPTY not in board_state)
 
+            if not is_game_finished:
+                current_player = O if current_player == X else X
 
-def get_user_input(board):
-    print('Please enter a move:')
-    user_in = input()
-    try:
-        x, y = input_to_move(user_in)
-    except Exception as e:
-        print('Move is invalid.')
-        x, y = get_user_input(board)
+        if is_game_won:
+            player_string = current_player
+            print('Player {} won the game'.format(player_string))
+        else:
+            print('The game was a tie.')
 
-    if not (0 <= x <= 2) or not (0 <= y <= 2) or (board[x, y] != EMPTY):
-        print('Move is invalid.')
-        x, y = get_user_input(board)
-
-    return x, y
 
