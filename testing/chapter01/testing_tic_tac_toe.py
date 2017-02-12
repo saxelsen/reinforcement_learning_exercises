@@ -25,17 +25,17 @@ class TestTicTacToe(unittest.TestCase):
         self.assertRaises(IndexError, tttutils.index_to_board_coordinates, 9)
 
     def test_string_to_state(self):
-        string = '000000000'
-        expected = np.ones((3,3)).astype(int) * 0
+        string = '---------'
+        expected = ttt.EMPTY_BOARD
         state = tttutils.string_to_state(string)
-        nptest.assert_array_almost_equal(expected, state)
+        nptest.assert_array_equal(expected, state)
 
     def test_string_to_state_error(self):
-        string = '0'
+        string = '-'
         self.assertRaises(ValueError, tttutils.string_to_state, string)
 
     def test_string_to_state_char(self):
-        string = 'WONT WORK'
+        string = 'WONT WORK!'
         self.assertRaises(ValueError, tttutils.string_to_state, string)
 
     def test_is_winning_state_for_player(self):

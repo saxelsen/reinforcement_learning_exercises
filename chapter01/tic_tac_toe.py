@@ -13,12 +13,12 @@ ROWS = 3
 COLS = 3
 
 #TODO: Wrap these in an Enum class
-EMPTY = 0
-X = 1
-O = 5
+EMPTY = '-'
+X = 'X'
+O = 'O'
 
 START_PROB = 0.5  #The default probability estimate of winning is 50%
-EMPTY_BOARD = np.zeros((ROWS, COLS)).astype(int)
+EMPTY_BOARD = np.array([EMPTY] * 9).reshape((ROWS, COLS))
 
 class TicTacToeUtils:
 
@@ -47,17 +47,17 @@ class TicTacToeUtils:
 
     @staticmethod
     def list_to_string(a_list):
-        return ''.join(map(str, a_list))
+        return ''.join(a_list)
 
     @staticmethod
     def state_to_string(state):
-        return ''.join(map(str, state.flatten().tolist()))
+        return ''.join(state.flatten().tolist())
 
     @staticmethod
     def string_to_state(state):
         if len(state) != 9:
             raise ValueError('The input state must be 9 digits long.')
-        state_list = list(map(int, list(state)))
+        state_list = list(state)
         return np.array([state_list[:3], state_list[3:6], state_list[6:]])
 
     @staticmethod
@@ -89,7 +89,7 @@ class TicTacToeGenerator:
 
     @staticmethod
     def invert_state(state):
-        result = list(map(int, list(state)))
+        result = list(state)
 
         for tile, player in enumerate(result):
             if player == EMPTY:
@@ -139,7 +139,7 @@ class TicTacToeGenerator:
             if tile == EMPTY:
                 new_state = list(root_state)
                 new_state[i] = player
-                new_state_key = ''.join(map(str, new_state))
+                new_state_key = ''.join(new_state)
                 default_prob = self.default_probability(new_state_key)
                 state_space[new_state_key] = default_prob
 
@@ -150,7 +150,7 @@ class TicTacToeGenerator:
 
     def default_probability(self, state_string):
         default_prob = START_PROB
-        state = list(map(int, list(state_string)))
+        state = list(state_string)
 
         player_wins = TicTacToeUtils.is_winning_state_for_player(state, self.origin_player)
         opponent_wins = TicTacToeUtils.is_winning_state_for_player(state, self.opponent)
@@ -301,7 +301,7 @@ def play_game(starting_player, ai_model_one, ai_model_two=None, training=False, 
         time.sleep(delay)
 
     if is_game_won:
-        player_string = 'X' if current_player == X else 'O'
+        player_string = current_player
         print('Player {} won the game'.format(player_string))
     else:
         print('The game was a tie.')
