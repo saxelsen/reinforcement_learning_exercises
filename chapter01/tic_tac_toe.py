@@ -25,16 +25,22 @@ class TicTacToeUtils:
     @staticmethod
     def is_winning_state_for_player(state, player):
         winner = False
-        goal_sum = 3*player
 
-        if sum(state[:3]) == goal_sum or \
-           sum(state[3:6]) == goal_sum or \
-           sum(state[6:]) == goal_sum or \
-           sum([state[i] for i in [0, 3, 6]]) == goal_sum or \
-           sum([state[i] for i in [1, 4, 7]]) == goal_sum or \
-           sum([state[i] for i in [2, 5, 8]]) == goal_sum or \
-           sum([state[i] for i in [0, 4, 8]]) == goal_sum or \
-           sum([state[i] for i in [2, 4, 6]]) == goal_sum:
+        if state[0] == player and state[1] == player and state[2] == player:
+            winner = True
+        elif state[3] == player and state[4] == player and state[5] == player:
+            winner = True
+        elif state[6] == player and state[7] == player and state[8] == player:
+            winner = True
+        elif state[0] == player and state[3] == player and state[6] == player:
+            winner = True
+        elif state[1] == player and state[4] == player and state[7] == player:
+            winner = True
+        elif state[2] == player and state[5] == player and state[8] == player:
+            winner = True
+        elif state[0] == player and state[4] == player and state[8] == player:
+            winner = True
+        elif state[2] == player and state[4] == player and state[6] == player:
             winner = True
 
         return winner
