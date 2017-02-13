@@ -338,8 +338,8 @@ class TicTacToeGame:
             if training:
                 self._update_players(board_before, board)
             else:
-                time.sleep(self.time_delay)
                 TicTacToeUtils.print_board(board)
+                time.sleep(self.time_delay)
 
             board_state = board.flatten().tolist()
             is_game_won = TicTacToeUtils.is_winning_state_for_player(board_state, current_player)
