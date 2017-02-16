@@ -302,7 +302,7 @@ class TicTacToeGame:
         if isinstance(self.player_two, RLTicTacToe):
             self.player_two.update(old_board, new_board)
 
-    def play(self, starting_player_symbol, training=False):
+    def play(self, starting_player_symbol, training=False, should_print_match=True):
         """
         Play through a game. X always starts the game.
         :param starting_player_symbol: An int equivalent to X or O. If ai_player is O, the user plays X and vice-versa.
@@ -348,10 +348,11 @@ class TicTacToeGame:
             if not is_game_finished:
                 current_player = O if current_player == X else X
 
-        if is_game_won:
-            player_string = current_player
-            print('Player {} won the game'.format(player_string))
-        else:
-            print('The game was a tie.')
+        if should_print_match:
+            if is_game_won:
+                player_string = current_player
+                print('Player {} won the game'.format(player_string))
+            else:
+                print('The game was a tie.')
 
 
