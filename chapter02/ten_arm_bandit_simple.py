@@ -9,7 +9,6 @@ steps = 1000
 k_bandits = 10
 explore_factors = [0, 0.01, 0.1]
 
-#
 true_mean = np.random.randn(k_bandits)
 all_avg_rewards = np.zeros((3, steps))
 
