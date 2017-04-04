@@ -1,68 +1,66 @@
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
+from matplotlib import pyplot as plt
+
+np.set_printoptions(precision=3, linewidth=200)
 
 np.random.seed(123)
-steps = 10
-k_bandits = 10
-explore_factor = 0.5
-alpha = 0.05
-arange = np.arange(k_bandits)
+reps = 1000
+steps = 1000
+k = 10
+epsilon = 0.1
+alpha = 0.3
 
-# Initialize arrays
-real_mean_q = np.zeros((steps, k_bandits))
-N_taken_avg = np.zeros((steps, k_bandits))
-mean_Q_avg = np.zeros((steps, k_bandits))
-mean_Q_exp_avg = np.zeros((steps, k_bandits))
-rewards = np.zeros((steps, k_bandits))
-score_avg = np.zeros((steps, 1))
-score_exp_avg = np.zeros((steps, 1))
-score_optimal = np.zeros((steps, 1))
-action_avg = np.zeros((steps, 1))
-action_exp_avg = np.zeros((steps, 1))
+true_mean = np.zeros((reps, k))
+average_estimates = np.zeros((reps, k))
+alpha_estimates = np.zeros((reps, k))
+N = np.zeros((reps, k))
+starting_action = np.random.randint(0, k-1, size=(reps,))
 
-# Run first period
-rewards[0] = real_mean_q[0] + np.random.randn(k_bandits)
-action_avg[0] = np.random.choice(arange)
-action_exp_avg[0] = action_avg[0]
-action_avg_mask = (arange == action_avg[0])
-N_taken_avg[0] = N_taken_avg[0] + action_avg_mask * np.ones((1, k_bandits))
-score_avg[0] = rewards[0, int(action_avg[0])]
-score_exp_avg[0] = rewards[0, int(action_exp_avg[0])]
-score_optimal[0] = rewards[0, int(action_avg[0])]
-mean_Q_avg[0] = action_avg_mask * rewards[0]
-mean_Q_exp_avg[0] = action_avg_mask * rewards[0]
+best_rewards = np.zeros(steps)
+average_rewards = np.zeros(steps)
+alpha_rewards = np.zeros(steps)
 
-for step in range(1, steps):
-    real_mean_q[step] = real_mean_q[step - 1] + np.random.randn(k_bandits)
-    rewards[step] = real_mean_q[step] + np.random.randn(k_bandits)
+for i in range(0, steps):
+    rewards = true_mean + np.random.randn(reps, k)
+    print('****** i={} *******'.format(i))
+    print('Average true means: {}'.format(true_mean.mean(axis=0)))
+    print('Average rewards: {}'.format(rewards.mean(axis=0)))
+    print('Sample average estimator: {}'.format(average_estimates.mean(axis=0)))
+    print('Moving average estimator: {}'.format(alpha_estimates.mean(axis=0)))
+    print('')
 
-    greedy = np.random.randn(1) <= 1 - explore_factor
-    if greedy:
-        action_avg[step] = np.where(mean_Q_avg[step - 1] == np.max(mean_Q_avg[step - 1]))[0][0]
-        action_exp_avg[step] = np.where(mean_Q_exp_avg[step - 1] == np.max(mean_Q_exp_avg[step - 1]))[0][0]
+    is_greedy = np.random.rand(reps) < 1-epsilon
+
+    if i == 0:
+        average_action = starting_action
+        alpha_action = starting_action
     else:
-        action_avg[step] = np.random.choice(np.where(mean_Q_avg[step - 1] != np.max(mean_Q_avg[step - 1]))[0])
-        action_exp_avg[step] = np.random.choice(np.where(mean_Q_exp_avg[step - 1] != np.max(mean_Q_exp_avg[step - 1]))[0])
+        average_action = is_greedy * np.argmax(average_estimates, axis=1) + ~is_greedy * np.random.randint(0, k - 1, size=(reps,))
+        alpha_action = is_greedy * np.argmax(alpha_estimates, axis=1) + ~is_greedy * np.random.randint(0, k - 1, size=(reps,))
 
-    score_avg[step] = rewards[step, int(action_avg[step])]
-    score_exp_avg[step] = rewards[step, int(action_exp_avg[step])]
-    score_optimal[step] = rewards[step, int(np.where(real_mean_q[step] == np.max(real_mean_q[step]))[0])]
+    average_action_mask = np.zeros((reps, k))
+    alpha_action_mask = np.zeros((reps, k))
+    average_action_mask[np.arange(0, reps), average_action] = 1
+    alpha_action_mask[np.arange(0, reps), alpha_action] = 1
 
-    action_avg_mask = (arange == action_avg[step])
-    action_exp_avg_mask = (arange == action_exp_avg[step])
+    N += average_action_mask
+    average_estimates += average_action_mask * np.divide(1, N, out=np.zeros_like(N), where=N != 0) * (rewards - average_estimates)
+    alpha_estimates += alpha_action_mask * alpha * (rewards - alpha_estimates)
 
-    N_taken_avg[step] = N_taken_avg[step - 1] + action_avg_mask * np.ones((1, k_bandits))
-    mean_Q_avg[step] = mean_Q_avg[step - 1] + action_avg_mask * np.minimum(1, 1/N_taken_avg[step]) * (rewards[step] - mean_Q_avg[step - 1])
-    mean_Q_exp_avg[step] = mean_Q_exp_avg[step - 1] + alpha * action_exp_avg_mask * (rewards[step] - mean_Q_exp_avg[step - 1])
+    true_mean -= np.random.randn(reps, k)  # Update the moving means
 
-print("Final mean rewards: ")
-print(real_mean_q[-1])
-print("Final Q_avg: ")
-print(mean_Q_avg[-1])
-print("Final Q_exp_avg: ")
-print(mean_Q_exp_avg[-1])
-print("Final score avg:")
-print(score_avg[-1])
-print("Final score exp_avg:")
-print(score_exp_avg[-1])
-print("Final optimal score:")
-print(score_optimal[-1])
+    best_rewards[i] = rewards.max(axis=1).mean()
+    average_rewards[i] = (average_action_mask * rewards).sum(axis=1).mean()
+    alpha_rewards[i] = (alpha_action_mask * rewards).sum(axis=1).mean()
+
+x = np.arange(1, steps+1)
+
+fig, ax = plt.subplots()
+
+ax.plot(x, best_rewards, 'g', label='best reward')
+ax.plot(x, average_rewards, 'b', label='sample average')
+ax.plot(x, alpha_rewards, 'r', label='moving average')
+ax.legend(loc='upper right', shadow=True)
+plt.show()
